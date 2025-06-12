@@ -143,17 +143,26 @@ const Skills = () => {
             <Button
               variant="outline"
               size="sm"
-              className="cursor-pointer ml-4 flex items-center gap-2 text-black/60 bg-black/5 border-black/5 hover:bg-black/10 dark:text-white/75 dark:border-white/5 dark:hover:bg-white/10"
+              className="cursor-pointer ml-4 flex items-center gap-2 px-2 py-2 text-sm shadow-sm border-zinc-400 dark:border-zinc-700 hover:bg-orange-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
             >
               <Expand className="w-4 h-4" />
               Expand
             </Button>
           </DrawerTrigger>
           <DrawerContent className="bg-orange-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-300 break-words leading-6 transition-colors duration-500">
+            {/* close button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer absolute -top-[48px] right-4 px-2 py-2 text-sm shadow-sm border-zinc-400 dark:border-zinc-700 hover:bg-orange-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
+              onClick={() => setOpen(false)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
             <Article className="px-5 mx-auto max-w-3xl">
               <DrawerHeader>
-                <DrawerTitle className="text-2xl text-center">Technical Skills Overview</DrawerTitle>
-                <DrawerDescription className="text-center">
+                <DrawerTitle className="text-2xl text-left md:text-center ">Technical Skills Overview</DrawerTitle>
+                <DrawerDescription className="text-center hidden md:block">
                   A comprehensive view of my technical expertise across different domains
                 </DrawerDescription>
               </DrawerHeader>
