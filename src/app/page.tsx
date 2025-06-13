@@ -1,5 +1,8 @@
 import Home from "@/components/Home";
 import { Metadata } from "next";
+import { generateUUID } from '@/lib/utils';
+import { Chat } from "@/components/chat/chat";
+import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 
 export const metadata: Metadata = {
   title: "Sidney Kaguli | Portfolio",
@@ -23,9 +26,17 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
+  const id = generateUUID();
   return (
     <>
+    <Chat
+        key={id}
+        id={id}
+        initialMessages={[]}
+        initialChatModel={DEFAULT_CHAT_MODEL}
+        autoResume={false}
+      />
     <Home />
-    </>
+    </> 
   );
 }
