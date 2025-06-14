@@ -11,6 +11,7 @@ import ShadowBlock from '@/components/ShadowBlock';
 import ProjectsHeading from '@/components/ProjectsHeading';
 import Contact from '@/components/Contact';
 import Article from '@/components/Article';
+import StickyNav from './chat/sticky-nav';
 
 const Home = () => {
   const variants = {
@@ -32,11 +33,8 @@ const Home = () => {
 
   return (
     <Article>
-      <div id="top" className="rounded-lg mb-6 p-3 text-center bg-white dark:bg-zinc-800 dark:text-zinc-100 backdrop-filter backdrop-blur-sm bg-opacity-50 dark:bg-opacity-50 transition duration-500 ease-in-out">
-        Hello, I&apos;m a full-stack web developer with a focus on remote work.
-      </div>
-
-      <div className="flex flex-col items-center md:flex-row my-8 md:my-14">
+      <StickyNav />
+      <div className="flex flex-col items-center md:flex-row my-8 md:my-14" id="header">
         <div className="self-start text-zinc-900 dark:text-zinc-100 transition duration-500 ease-in-out">
           <h2 className="text-3xl  font-semibold font-mplus">
             Sidney Kaguli

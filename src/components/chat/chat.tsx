@@ -79,30 +79,27 @@ export function Chat({
   }, [query, append, hasAppendedQuery, id]);
 
   return (
-    <div className="">
-      <div className="relative bg-white/50 rounded-2xl my-2 mr-1">
-        <div className="mt-32 absolute h-64 blur-2xl w-full top-1/2 left-1/2 transform -translate-y-1/2 -translate-x-1/2 bg-green-500/5" />
-        <div className="flex flex-col min-w-0 h-[calc(100vh-16px)]">
-          <Messages
-            chatId={id}
-            status={status}
-            messages={messages}
-          />
+    <div className='relative'>
+      <div className="flex flex-col">
+        <Messages
+          chatId={id}
+          status={status}
+          messages={messages}
+        />
 
-          <form className="flex mx-auto px-4 bg-transparent pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
-            <MultimodalInput
-                chatId={id}
-                input={input}
-                setInput={setInput}
-                handleSubmit={handleSubmit}
-                status={status}
-                stop={stop}
-                messages={messages}
-                setMessages={setMessages}
-                append={append}
-              />
-          </form>
-        </div>
+        <form className="flex mx-auto bg-transparent gap-2 w-full md:max-w-3xl bottom-6 fixed left-0 right-0">
+          <MultimodalInput
+              chatId={id}
+              input={input}
+              setInput={setInput}
+              handleSubmit={handleSubmit}
+              status={status}
+              stop={stop}
+              messages={messages}
+              setMessages={setMessages}
+              append={append}
+            />
+        </form>
       </div>
     </div>
   );

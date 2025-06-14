@@ -1,11 +1,12 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from '@/components/chat/message';
-import { Greeting } from '@/components/chat/greeting';
+// import { Greeting } from '@/components/chat/greeting';
 import { memo } from 'react';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { motion } from 'motion/react';
 import { useMessages } from '@/hooks/use-messages';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface MessagesProps {
   chatId: string;
@@ -32,30 +33,33 @@ function PureMessages({
   return (
     <div
       ref={messagesContainerRef}
-      className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4 relative"
+      className="flex flex-col min-w-0 gap-6 flex-1 pt-4 relative"
     >
-      {messages.length === 0 && <Greeting />}
+      <ScrollArea className="h-[460px]">
+        {/* {messages.length === 0 && <Greeting />} */}
 
-      {messages.map((message, index) => (
-        <PreviewMessage
-          key={message.id}
-          message={message}
-          requiresScrollPadding={
-            hasSentMessage && index === messages.length - 1
-          }
+        {messages.map((message, index) => (
+          <PreviewMessage
+            key={message.id}
+            message={message}
+            requiresScrollPadding={
+              hasSentMessage && index === messages.length - 1
+            }
+          />
+        ))}
+
+        {status === 'submitted' &&
+          messages.length > 0 &&
+          messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
+
+        <motion.div
+          ref={messagesEndRef}
+          className="shrink-0 min-w-[24px] min-h-[24px]"
+          onViewportLeave={onViewportLeave}
+          onViewportEnter={onViewportEnter}
         />
-      ))}
 
-      {status === 'submitted' &&
-        messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
-
-      <motion.div
-        ref={messagesEndRef}
-        className="shrink-0 min-w-[24px] min-h-[24px]"
-        onViewportLeave={onViewportLeave}
-        onViewportEnter={onViewportEnter}
-      />
+      </ScrollArea>
     </div>
   );
 }

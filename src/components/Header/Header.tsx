@@ -8,10 +8,10 @@ import { Github } from 'lucide-react';
 import DropdownMenu from './DropdownMenu';
 
 const Header = () => (
-  <header className="fixed w-full py-2 px-5 z-20 md:p-4 backdrop-blur-md dark:text-zinc-50">
+  <header className="fixed w-full py-2 px-5 z-[100] md:p-4 backdrop-blur-md dark:text-zinc-50">
     <div className="mx-auto max-w-5xl">
       <nav className="flex items-center gap-5 text-base">
-        <ScrollLink to="top" spy smooth className="group">
+        <ScrollLink to="header" spy smooth offset={-200}>
           <button type="button" className="font-semibold">
             Sidney Kaguli
           </button>
