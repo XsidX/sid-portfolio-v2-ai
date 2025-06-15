@@ -74,7 +74,7 @@ export function Chat({
       });
 
       setHasAppendedQuery(true);
-      window.history.replaceState({}, '', `/chat/${id}`);
+      // window.history.replaceState({}, '', `/chat/${id}`);
     }
   }, [query, append, hasAppendedQuery, id]);
 

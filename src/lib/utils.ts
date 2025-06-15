@@ -1,3 +1,4 @@
+import { CoreAssistantMessage, CoreToolMessage } from "ai";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -34,6 +35,21 @@ export const fetcher = async (url: string) => {
 
   return res.json();
 };
+
+type ResponseMessageWithoutId = CoreToolMessage | CoreAssistantMessage;
+type ResponseMessage = ResponseMessageWithoutId & { id: string };
+
+export function getTrailingMessageId({
+  messages,
+}: {
+  messages: Array<ResponseMessage>;
+}): string | null {
+  const trailingMessage = messages.at(-1);
+
+  if (!trailingMessage) return null;
+
+  return trailingMessage.id;
+}
 
 export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');

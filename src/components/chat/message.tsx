@@ -3,14 +3,12 @@
 import type { UIMessage } from 'ai';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'motion/react';
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Markdown } from './markdown';
 import { Weather } from './weather';
 import equal from 'fast-deep-equal';
 import { cn, sanitizeText } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { PencilEditIcon, SparklesIcon } from '@/components/ui/icons';
+import { SparklesIcon } from '@/components/ui/icons';
 
 const PurePreviewMessage = ({
   message,
@@ -19,7 +17,6 @@ const PurePreviewMessage = ({
   message: UIMessage;
   requiresScrollPadding: boolean;
 }) => {
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
 
   return (
     <AnimatePresence>
@@ -34,8 +31,8 @@ const PurePreviewMessage = ({
           className={cn(
             'flex gap-4 font-medium w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl',
             {
-              'w-full': mode === 'edit',
-              'group-data-[role=user]/message:w-fit': mode !== 'edit',
+              'w-full': true,
+              'group-data-[role=user]/message:w-fit': true,
             },
           )}
         >
@@ -57,27 +54,8 @@ const PurePreviewMessage = ({
               const key = `message-${message.id}-part-${index}`;
 
               if (type === 'text') {
-                if (mode === 'view') {
-                  return (
+                return (
                     <div key={key} className="flex flex-row gap-2 items-start">
-                      {message.role === 'user' && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              data-testid="message-edit-button"
-                              variant="ghost"
-                              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
-                              onClick={() => {
-                                setMode('edit');
-                              }}
-                            >
-                              <PencilEditIcon />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit message</TooltipContent>
-                        </Tooltip>
-                      )}
-
                       <div
                         data-testid="message-content"
                         className={cn('flex flex-col gap-4', {
@@ -88,8 +66,7 @@ const PurePreviewMessage = ({
                         <Markdown>{sanitizeText(part.text)}</Markdown>
                       </div>
                     </div>
-                  );
-                }
+                );
               }
 
               if (type === 'tool-invocation') {

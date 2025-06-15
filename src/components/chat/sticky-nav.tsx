@@ -12,7 +12,6 @@ import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Link as ScrollLink } from 'react-scroll';
 
-
 export default function StickyNav() {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -60,13 +59,13 @@ export default function StickyNav() {
             Ask me anything you want to know about my work and projects.
           </DialogDescription>
         </VisuallyHidden>
-        <DialogContent className={clsx("sm:max-w-3xl max-w-full max-h-[calc(100vh-300px)] bg-orange-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-300 min-h-[calc(100vh-600px)]", !isScrolled ? "top-[425px]" : "top-[390px]")}>
-            <Chat
-              key={id}
-              id={id}
-              initialMessages={[]}
+        <DialogContent className={clsx("md:-ml-2 sm:max-w-3xl max-w-full max-h-[calc(100vh-300px)] bg-orange-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-300 min-h-[calc(100vh-600px)] rounded-3xl", !isScrolled ? "top-[425px]" : "top-[390px]")}>
+          <Chat
+            key={id}
+            id={id}
+            initialMessages={[]}
             initialChatModel={DEFAULT_CHAT_MODEL}
-            autoResume={false}
+            autoResume={true}
           />
         </DialogContent>
       </Dialog>
