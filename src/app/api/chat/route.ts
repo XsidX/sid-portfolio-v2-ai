@@ -29,16 +29,26 @@ function getStreamContext() {
   return globalStreamContext
 }
 
-// Agent 1: Topic Selection
-const topicSelectionPrompt = `You are a topic selection agent. Your job is to analyze the user's query and select the most relevant topic from the available topics.
+// Agent 1: Topic Selection - Improved with better analysis
+const topicSelectionPrompt = (originalQuery: string) => `
+You are a topic selection agent. Your task is to analyze the user's query and select the most relevant topic from available topics.
+
+User Query: "${originalQuery}"
 
 Instructions:
-1. Use the getTopicNames tool to get the list of available topics
-2. Analyze the user's query to understand what they're asking about
-3. Select the most relevant topic from the list that would help answer their question
-4. Respond with ONLY the selected topic name - nothing else, no explanations
+1. First, use the getTopicNames tool to get all available topics
+2. Carefully analyze the user's query to understand what they're asking about
+3. Compare the user's query with each available topic to find the best match
+4. Consider keywords, context, and intent when matching
+5. Select the topic that would most likely contain information to answer the user's question
+6. Respond with ONLY the exact topic name from the available list - nothing else
 
-Be precise and choose the topic that best matches the user's intent.`
+Examples:
+- If user asks "What's your background?" and topics include ["experience", "education", "skills"] → select "experience"
+- If user asks "Tell me about your projects" and topics include ["projects", "experience", "skills"] → select "projects"
+- If user asks "What technologies do you know?" and topics include ["skills", "projects", "experience"] → select "skills"
+
+Be precise and select the topic that best matches the user's intent.`
 
 // Agent 2: Content Retrieval
 const contentRetrievalPrompt = (
@@ -46,7 +56,7 @@ const contentRetrievalPrompt = (
 ) => `You are a content retrieval agent. Your job is to gather comprehensive information about the topic: "${selectedTopic}".
 
 Instructions:
-1. Use the readAboutSid tool with the topic "${selectedTopic}" to get all available information
+1. Use the readAboutSid tool with the exact topic name "${selectedTopic}"
 2. Return the complete information you retrieve - do not summarize or filter it
 3. Your role is purely to fetch and return the raw content
 
@@ -57,7 +67,7 @@ const responseGenerationPrompt = (
   originalQuery: string,
   selectedTopic: string,
   retrievedContent: string,
-) => `You are a response generation agent. You have been provided with:
+) => `You are an AI assistant that helps answer questions about Sid(Sidney Kaguli), in his portfolio website.
 
 Original User Query: "${originalQuery}"
 Selected Topic: "${selectedTopic}"
@@ -130,20 +140,18 @@ export async function POST(request: Request) {
 
           const topicSelectionResult = await generateText({
             model: myProvider.languageModel(selectedChatModel),
-            system: topicSelectionPrompt,
+            system: topicSelectionPrompt(messageContent),
             messages,
             tools: {
               getTopicNamesTool,
             },
-            toolChoice: { type: 'tool', toolName: 'getTopicNamesTool' },
             maxSteps: 5,
           })
+
           console.log("Topic selection result:", topicSelectionResult)
 
-          // Extract the selected topic
-          let selectedTopic = ""
+          // Extract available topics first
           let availableTopics: string[] = []
-
           if (topicSelectionResult.toolResults && topicSelectionResult.toolResults.length > 0) {
             const topicNamesResult = topicSelectionResult.toolResults.find(
               (result) => result.toolName === "getTopicNamesTool",
@@ -153,29 +161,83 @@ export async function POST(request: Request) {
               availableTopics = Array.isArray(topicNamesResult.result)
                 ? topicNamesResult.result
                 : [topicNamesResult.result]
-
-              const generatedText = topicSelectionResult.text.trim()
-
-              // Try exact match first
-              selectedTopic = availableTopics.find((topic) => topic.toLowerCase() === generatedText.toLowerCase()) || ""
-
-              // Try partial match
-              if (!selectedTopic) {
-                selectedTopic =
-                  availableTopics.find(
-                    (topic) =>
-                      generatedText.toLowerCase().includes(topic.toLowerCase()) ||
-                      topic.toLowerCase().includes(generatedText.toLowerCase()),
-                  ) || ""
-              }
-
-              // Fallback to first topic
-              if (!selectedTopic && availableTopics.length > 0) {
-                selectedTopic = availableTopics[0]
-              }
             }
           }
 
+          console.log("Available topics:", availableTopics)
+
+          // Extract the selected topic with improved matching
+          let selectedTopic = ""
+          const generatedText = topicSelectionResult.text.trim().toLowerCase()
+          console.log("Generated topic selection text:", generatedText)
+
+          if (availableTopics.length > 0) {
+            // Try exact match first (case insensitive)
+            selectedTopic = availableTopics.find((topic) => topic.toLowerCase() === generatedText) || ""
+
+            // If no exact match, try to find the topic mentioned in the generated text
+            if (!selectedTopic) {
+              selectedTopic = availableTopics.find((topic) => generatedText.includes(topic.toLowerCase())) || ""
+            }
+
+            // If still no match, try reverse - see if any topic is contained in the generated text
+            if (!selectedTopic) {
+              selectedTopic = availableTopics.find((topic) => topic.toLowerCase().includes(generatedText)) || ""
+            }
+
+            // Smart matching based on user query intent
+            if (!selectedTopic) {
+              const queryLower = messageContent.toLowerCase()
+
+              // Define keyword mappings for better topic selection
+              const topicKeywords: Record<string, string[]> = {
+                experience: ["experience", "work", "job", "career", "background", "history", "professional"],
+                projects: ["project", "build", "created", "developed", "portfolio", "work", "app", "website"],
+                skills: [
+                  "skill",
+                  "technology",
+                  "tech",
+                  "programming",
+                  "language",
+                  "framework",
+                  "tool",
+                  "know",
+                  "learn",
+                ],
+                education: ["education", "school", "university", "degree", "study", "learn", "academic"],
+                about: ["about", "who", "introduction", "bio", "background", "tell me"],
+                contact: ["contact", "reach", "email", "phone", "connect", "get in touch"],
+              }
+
+              // Find the best matching topic based on keywords
+              let bestMatch = ""
+              let maxMatches = 0
+
+              for (const topic of availableTopics) {
+                const topicLower = topic.toLowerCase()
+                const keywords = topicKeywords[topicLower] || [topicLower]
+
+                const matches = keywords.filter((keyword) => queryLower.includes(keyword)).length
+
+                if (matches > maxMatches) {
+                  maxMatches = matches
+                  bestMatch = topic
+                }
+              }
+
+              if (bestMatch && maxMatches > 0) {
+                selectedTopic = bestMatch
+              }
+            }
+
+            // Final fallback to first topic if nothing matches
+            if (!selectedTopic && availableTopics.length > 0) {
+              selectedTopic = availableTopics[0]
+              console.log("Using fallback topic:", selectedTopic)
+            }
+          }
+
+          // Last resort: use generated text as topic name
           if (!selectedTopic && topicSelectionResult.text) {
             selectedTopic = topicSelectionResult.text.trim()
           }
@@ -184,18 +246,20 @@ export async function POST(request: Request) {
             throw new Error("No topic could be selected")
           }
 
-          console.log("Selected topic:", selectedTopic)
+          console.log("Final selected topic:", selectedTopic)
+          console.log("User query was:", messageContent)
 
           dataStream.writeData({
             type: "topic_selected",
             topic: selectedTopic,
-            message: `📋 Selected topic: ${selectedTopic}`,
+            availableTopics: availableTopics,
+            message: `📋 Selected topic: ${selectedTopic} (from ${availableTopics.length} available topics)`,
           })
 
           // AGENT 2: Content Retrieval
           dataStream.writeData({
             type: "status",
-            message: "📚 Step 2: Retrieving comprehensive information about the topic...",
+            message: `📚 Step 2: Retrieving information about "${selectedTopic}"...`,
           })
 
           const contentRetrievalMessages = appendClientMessage({
@@ -215,7 +279,6 @@ export async function POST(request: Request) {
             tools: {
               readAboutSidTool,
             },
-            experimental_activeTools: ['readAboutSidTool'],
             maxSteps: 5,
           })
 
@@ -251,7 +314,7 @@ export async function POST(request: Request) {
           dataStream.writeData({
             type: "content_retrieved",
             content: retrievedContent.substring(0, 200) + "...", // Preview
-            message: `📖 Retrieved ${retrievedContent.length} characters of information`,
+            message: `📖 Retrieved ${retrievedContent.length} characters of information about "${selectedTopic}"`,
           })
 
           // AGENT 3: Response Generation

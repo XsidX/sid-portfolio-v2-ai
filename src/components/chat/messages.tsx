@@ -7,6 +7,7 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 import { motion } from 'motion/react';
 import { useMessages } from '@/hooks/use-messages';
 import { ScrollArea } from '../ui/scroll-area';
+import clsx from 'clsx';
 
 interface MessagesProps {
   chatId: string;
@@ -35,7 +36,10 @@ function PureMessages({
       ref={messagesContainerRef}
       className="flex flex-col min-w-0 gap-6 flex-1 pt-4 relative"
     >
-      <ScrollArea className="h-[460px]">
+      <ScrollArea className={clsx({
+        'h-[370px]': messages.length > 0,
+        'h-[170px]': messages.length === 0,
+      })}>
         {/* {messages.length === 0 && <Greeting />} */}
 
         {messages.map((message, index) => (
