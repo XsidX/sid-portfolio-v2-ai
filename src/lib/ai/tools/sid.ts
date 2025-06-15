@@ -1,16 +1,16 @@
 import { fromPackageRoot } from '@/lib/utils';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { tool } from 'ai';
+import { z } from 'zod';
 
 // for testing
 // pnpx tsx sid.ts
 
 const sidDir = fromPackageRoot('sid');
 
-const aboutSidPrompt = `You are an AI assistant for Sid(Sidney Kaguli) in his portfolio website. You are able to answer questions about Sid, his elevator pitch, his education, his work experience`;
-
 export function wrapContentInPrompt(content: string): string {
-    const wrappedContent = `${aboutSidPrompt}\n\nHere is the content for this topic: <TopicContent>${content}</TopicContent>`;
+    const wrappedContent = `Here is the content for this topic: <TopicContent>${content}</TopicContent>`;
     return wrappedContent;
 }
 
@@ -37,3 +37,21 @@ export const getTopicNames = async (): Promise<string[]> => {
     const topicDirs = await fs.readdir(sidDir);
     return topicDirs.map(f => f.replace(/^\d+-/, '').replace('.md', ''));
 }
+
+export const getTopicNamesTool = tool({
+    description: 'Get the list of available topics',
+    parameters: z.object({}),
+    execute: async () => {
+        return await getTopicNames();
+    },
+});
+
+export const readAboutSidTool = tool({
+    description: 'Read about a specific topic',
+    parameters: z.object({
+        topicName: z.string(),
+    }),
+    execute: async ({ topicName }) => {
+        return await readAboutSid(topicName);
+    },
+});

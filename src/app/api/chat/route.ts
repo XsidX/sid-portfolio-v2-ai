@@ -1,121 +1,313 @@
-import {
-    appendClientMessage,
-    createDataStream,
-    smoothStream,
-    streamText,
-  } from 'ai';
-  import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
-  import { generateUUID } from '@/lib/utils';
-  import { getWeather } from '@/lib/ai/tools/get-weather';
-  import { myProvider } from '@/lib/ai/providers';
-  import { postRequestBodySchema, type PostRequestBody } from './schema';
-  import { geolocation } from '@vercel/functions';
-  import {
-    createResumableStreamContext,
-    type ResumableStreamContext,
-  } from 'resumable-stream';
-  import { after } from 'next/server';
-  
-  export const maxDuration = 60;
-  
-  let globalStreamContext: ResumableStreamContext | null = null;
-  
-  function getStreamContext() {
-    if (!globalStreamContext) {
-      try {
-        globalStreamContext = createResumableStreamContext({
-          waitUntil: after,
-        });
+import { appendClientMessage, createDataStream, smoothStream, streamText, generateText } from "ai"
+import { generateUUID } from "@/lib/utils"
+import { myProvider } from "@/lib/ai/providers"
+import { postRequestBodySchema, type PostRequestBody } from "./schema"
+import { createResumableStreamContext, type ResumableStreamContext } from "resumable-stream"
+import { after } from "next/server"
+import { getTopicNamesTool, readAboutSidTool } from "@/lib/ai/tools/sid"
+
+export const maxDuration = 60
+
+let globalStreamContext: ResumableStreamContext | null = null
+
+function getStreamContext() {
+  if (!globalStreamContext) {
+    try {
+      globalStreamContext = createResumableStreamContext({
+        waitUntil: after,
+      })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        if (error.message.includes('REDIS_URL')) {
-          console.log(
-            ' > Resumable streams are disabled due to missing REDIS_URL',
-          );
-        } else {
-          console.error(error);
-        }
+    } catch (error: any) {
+      if (error.message.includes("REDIS_URL")) {
+        console.log(" > Resumable streams are disabled due to missing REDIS_URL")
+      } else {
+        console.error(error)
       }
     }
-  
-    return globalStreamContext;
   }
-  
-  export async function POST(request: Request) {
-    let requestBody: PostRequestBody;
-  
-    try {
-      const json = await request.json();
-      requestBody = postRequestBodySchema.parse(json);
+
+  return globalStreamContext
+}
+
+// Agent 1: Topic Selection
+const topicSelectionPrompt = `You are a topic selection agent. Your job is to analyze the user's query and select the most relevant topic from the available topics.
+
+Instructions:
+1. Use the getTopicNames tool to get the list of available topics
+2. Analyze the user's query to understand what they're asking about
+3. Select the most relevant topic from the list that would help answer their question
+4. Respond with ONLY the selected topic name - nothing else, no explanations
+
+Be precise and choose the topic that best matches the user's intent.`
+
+// Agent 2: Content Retrieval
+const contentRetrievalPrompt = (
+  selectedTopic: string,
+) => `You are a content retrieval agent. Your job is to gather comprehensive information about the topic: "${selectedTopic}".
+
+Instructions:
+1. Use the readAboutSid tool with the topic "${selectedTopic}" to get all available information
+2. Return the complete information you retrieve - do not summarize or filter it
+3. Your role is purely to fetch and return the raw content
+
+Topic to research: "${selectedTopic}"`
+
+// Agent 3: Response Generation
+const responseGenerationPrompt = (
+  originalQuery: string,
+  selectedTopic: string,
+  retrievedContent: string,
+) => `You are a response generation agent. You have been provided with:
+
+Original User Query: "${originalQuery}"
+Selected Topic: "${selectedTopic}"
+Retrieved Content: "${retrievedContent}"
+
+Your task is to:
+1. Use the retrieved content as your knowledge base
+2. Answer the user's original query comprehensively using this information
+3. Provide a helpful, detailed response that directly addresses what the user asked
+4. If the retrieved content doesn't fully answer the query, acknowledge this and provide what information you can
+
+Do NOT use any tools. Simply use the provided content to generate your response.
+
+User's question: "${originalQuery}"
+Answer based on the retrieved content about "${selectedTopic}".`
+
+export async function POST(request: Request) {
+  let requestBody: PostRequestBody
+
+  try {
+    const json = await request.json()
+    requestBody = postRequestBodySchema.parse(json)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_) {
-      return new Response('Invalid request body', { status: 400 });
-    }
-  
-    try {
-      const { message, selectedChatModel } = requestBody;
-  
-      const messages = appendClientMessage({
-        messages: [],
-        message,
-      });
-  
-      const { longitude, latitude, city, country } = geolocation(request);
-  
-      const requestHints: RequestHints = {
-        longitude,
-        latitude,
-        city,
-        country,
-      };
-  
-      const streamId = generateUUID();
-  
-      const stream = createDataStream({
-        execute: (dataStream) => {
+  } catch (_) {
+    return new Response("Invalid request body", { status: 400 })
+  }
+
+  try {
+    const { message, selectedChatModel } = requestBody
+
+    // Extract the content from the message object
+    const messageContent = typeof message === "string" ? message : message.content
+
+    const messages = appendClientMessage({
+      messages: [],
+      message,
+    })
+
+    const streamId = generateUUID()
+
+    const stream = createDataStream({
+      execute: async (dataStream) => {
+        try {
+          // Skip chaining for reasoning model
+          if (selectedChatModel === "chat-model-reasoning") {
+            const result = streamText({
+              model: myProvider.languageModel(selectedChatModel),
+              system: `
+              - You are an AI assistant that helps answer questions about Sid(Sidney Kaguli), in his portfolio website.
+              `,
+              messages,
+              maxSteps: 5,
+              experimental_activeTools: [],
+              experimental_transform: smoothStream({ chunking: "word" }),
+              experimental_generateMessageId: generateUUID,
+            })
+
+            result.consumeStream()
+            result.mergeIntoDataStream(dataStream, {
+              sendReasoning: true,
+            })
+            return
+          }
+
+          // AGENT 1: Topic Selection
+          dataStream.writeData({
+            type: "status",
+            message: "🔍 Step 1: Analyzing query and selecting relevant topic...",
+          })
+
+          const topicSelectionResult = await generateText({
+            model: myProvider.languageModel(selectedChatModel),
+            system: topicSelectionPrompt,
+            messages,
+            tools: {
+              getTopicNamesTool,
+            },
+            toolChoice: { type: 'tool', toolName: 'getTopicNamesTool' },
+            maxSteps: 5,
+          })
+          console.log("Topic selection result:", topicSelectionResult)
+
+          // Extract the selected topic
+          let selectedTopic = ""
+          let availableTopics: string[] = []
+
+          if (topicSelectionResult.toolResults && topicSelectionResult.toolResults.length > 0) {
+            const topicNamesResult = topicSelectionResult.toolResults.find(
+              (result) => result.toolName === "getTopicNamesTool",
+            )
+
+            if (topicNamesResult && topicNamesResult.result) {
+              availableTopics = Array.isArray(topicNamesResult.result)
+                ? topicNamesResult.result
+                : [topicNamesResult.result]
+
+              const generatedText = topicSelectionResult.text.trim()
+
+              // Try exact match first
+              selectedTopic = availableTopics.find((topic) => topic.toLowerCase() === generatedText.toLowerCase()) || ""
+
+              // Try partial match
+              if (!selectedTopic) {
+                selectedTopic =
+                  availableTopics.find(
+                    (topic) =>
+                      generatedText.toLowerCase().includes(topic.toLowerCase()) ||
+                      topic.toLowerCase().includes(generatedText.toLowerCase()),
+                  ) || ""
+              }
+
+              // Fallback to first topic
+              if (!selectedTopic && availableTopics.length > 0) {
+                selectedTopic = availableTopics[0]
+              }
+            }
+          }
+
+          if (!selectedTopic && topicSelectionResult.text) {
+            selectedTopic = topicSelectionResult.text.trim()
+          }
+
+          if (!selectedTopic) {
+            throw new Error("No topic could be selected")
+          }
+
+          console.log("Selected topic:", selectedTopic)
+
+          dataStream.writeData({
+            type: "topic_selected",
+            topic: selectedTopic,
+            message: `📋 Selected topic: ${selectedTopic}`,
+          })
+
+          // AGENT 2: Content Retrieval
+          dataStream.writeData({
+            type: "status",
+            message: "📚 Step 2: Retrieving comprehensive information about the topic...",
+          })
+
+          const contentRetrievalMessages = appendClientMessage({
+            messages: [],
+            message: {
+              id: generateUUID(),
+              createdAt: new Date(),
+              role: "user" as const,
+              content: `Retrieve information about: ${selectedTopic}`,
+            },
+          })
+
+          const contentRetrievalResult = await generateText({
+            model: myProvider.languageModel(selectedChatModel),
+            system: contentRetrievalPrompt(selectedTopic),
+            messages: contentRetrievalMessages,
+            tools: {
+              readAboutSidTool,
+            },
+            experimental_activeTools: ['readAboutSidTool'],
+            maxSteps: 5,
+          })
+
+          console.log("Content retrieval result:", contentRetrievalResult)
+
+          // Extract the retrieved content
+          let retrievedContent = ""
+
+          if (contentRetrievalResult.toolResults && contentRetrievalResult.toolResults.length > 0) {
+            const readAboutSidResult = contentRetrievalResult.toolResults.find(
+              (result) => result.toolName === "readAboutSidTool",
+            )
+
+            if (readAboutSidResult && readAboutSidResult.result) {
+              retrievedContent =
+                typeof readAboutSidResult.result === "string"
+                  ? readAboutSidResult.result
+                  : JSON.stringify(readAboutSidResult.result)
+            }
+          }
+
+          // Fallback to generated text if no tool result
+          if (!retrievedContent && contentRetrievalResult.text) {
+            retrievedContent = contentRetrievalResult.text
+          }
+
+          if (!retrievedContent) {
+            retrievedContent = `No specific information found about ${selectedTopic}`
+          }
+
+          console.log("Retrieved content length:", retrievedContent.length)
+
+          dataStream.writeData({
+            type: "content_retrieved",
+            content: retrievedContent.substring(0, 200) + "...", // Preview
+            message: `📖 Retrieved ${retrievedContent.length} characters of information`,
+          })
+
+          // AGENT 3: Response Generation
+          dataStream.writeData({
+            type: "status",
+            message: "✍️ Step 3: Generating comprehensive response...",
+          })
+
+          const responseMessages = appendClientMessage({
+            messages: [],
+            message: {
+              id: generateUUID(),
+              createdAt: new Date(),
+              role: "user" as const,
+              content: messageContent, // Original user query
+            },
+          })
+
           const result = streamText({
             model: myProvider.languageModel(selectedChatModel),
-            system: systemPrompt({ selectedChatModel, requestHints }),
-            messages,
-            maxSteps: 5,
-            experimental_activeTools:
-              selectedChatModel === 'chat-model-reasoning'
-                ? []
-                : [
-                    'getWeather',
-                  ],
-            experimental_transform: smoothStream({ chunking: 'word' }),
+            system: responseGenerationPrompt(messageContent, selectedTopic, retrievedContent),
+            messages: responseMessages,
+            maxSteps: 3, // No tools needed for final response
+            experimental_transform: smoothStream({ chunking: "word" }),
             experimental_generateMessageId: generateUUID,
-            tools: {
-              getWeather,
-            },
-          });  
-          result.consumeStream();
-  
+          })
+
+          result.consumeStream()
           result.mergeIntoDataStream(dataStream, {
             sendReasoning: true,
-          });
-        },
-        onError: (error) => {
-          console.error('Error in stream execution:', error);
-          return 'Oops, an error occurred!';
-        },
-      });
-  
-      const streamContext = getStreamContext();
-  
-      if (streamContext) {
-        return new Response(
-          await streamContext.resumableStream(streamId, () => stream),
-        );
-      } else {
-        return new Response(stream);
-      }
-    } catch (error) {
-      console.error(error);
-      return new Response('An error occurred while processing your request!', {
-        status: 500,
-      });
+          })
+        } catch (error) {
+          console.error("Error in agent chaining:", error)
+          dataStream.writeData({
+            type: "error",
+            message: `An error occurred during processing: ${error}`,
+          })
+        }
+      },
+      onError: (error) => {
+        console.error("Error in stream execution:", error)
+        return "Oops, an error occurred!"
+      },
+    })
+
+    const streamContext = getStreamContext()
+
+    if (streamContext) {
+      return new Response(await streamContext.resumableStream(streamId, () => stream))
+    } else {
+      return new Response(stream)
     }
+  } catch (error) {
+    console.error(error)
+    return new Response("An error occurred while processing your request!", {
+      status: 500,
+    })
   }
-  
+}

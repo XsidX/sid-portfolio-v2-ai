@@ -19,9 +19,9 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
-        'chat-model': google('gemini-2.0-flash-lite'),
+        'chat-model': google('gemini-2.5-flash-preview-04-17'),
         'chat-model-reasoning': wrapLanguageModel({
-          model: google('gemini-2.0-flash-lite'),
+          model: google('gemini-2.5-flash-preview-04-17'),
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
       },

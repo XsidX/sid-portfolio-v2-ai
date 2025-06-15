@@ -57,5 +57,5 @@ export function sanitizeText(text: string) {
 }
 
 export function fromPackageRoot(relative: string) {
-  return path.resolve(__dirname, `../`, relative);
+  return path.resolve(__dirname, `../../../../src/`, relative);
 }
