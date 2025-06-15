@@ -56,60 +56,23 @@ import {
       const { message, selectedChatModel } = requestBody;
   
       const messages = appendClientMessage({
+        messages: [],
+        message,
       });
-    } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
-        console.log(' > Resumable streams are disabled due to missing REDIS_URL');
-      } else {
-        console.error(error);
-      }
-    }
-  }
-
-  return globalStreamContext;
-}
-
-export async function POST(request: Request) {
-  let requestBody: PostRequestBody;
-
-  try {
-    const json = await request.json();
-    requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
-    return new Response('Invalid request body', { status: 400 });
-  }
-
-  try {
-    const { message, selectedChatModel } = requestBody;
-
-    const messages = appendClientMessage({
-      messages: [],
-      message,
-    });
-
-    const { longitude, latitude, city, country } = geolocation(request);
-
-    const requestHints: RequestHints = {
-      longitude,
-      latitude,
-      model: myProvider.languageModel(selectedChatModel),
-      system: systemPrompt({ selectedChatModel, requestHints }),
-      messages,
-      maxSteps: 5,
-      experimental_activeTools:
-        selectedChatModel === 'chat-model-reasoning'
-          ? []
-          : ['getWeather'],
-      experimental_transform: smoothStream({ chunking: 'word' }),
-      experimental_generateMessageId: generateUUID,
-      tools: {
-        getWeather,
-      },
-    };
-
-    const stream = createDataStream({
-      execute: async (dataStream) => {
-        try {
+  
+      const { longitude, latitude, city, country } = geolocation(request);
+  
+      const requestHints: RequestHints = {
+        longitude,
+        latitude,
+        city,
+        country,
+      };
+  
+      const streamId = generateUUID();
+  
+      const stream = createDataStream({
+        execute: (dataStream) => {
           const result = streamText({
             model: myProvider.languageModel(selectedChatModel),
             system: systemPrompt({ selectedChatModel, requestHints }),
@@ -118,39 +81,30 @@ export async function POST(request: Request) {
             experimental_activeTools:
               selectedChatModel === 'chat-model-reasoning'
                 ? []
-                : ['getWeather'],
+                : [
+                    'getWeather',
+                  ],
             experimental_transform: smoothStream({ chunking: 'word' }),
             experimental_generateMessageId: generateUUID,
             tools: {
               getWeather,
             },
-          });
-
+          });  
           result.consumeStream();
-
-          await result.mergeIntoDataStream(dataStream, {
+  
+          result.mergeIntoDataStream(dataStream, {
             sendReasoning: true,
           });
-        } catch (error) {
+        },
+        onError: (error) => {
           console.error('Error in stream execution:', error);
-          dataStream.append({ type: 'text-delta', textDelta: 'Sorry, an error occurred while processing your request.' });
-          dataStream.close();
-        }
-      },
-      onError: (error) => {
-        console.error('Stream error:', error);
-        return 'Sorry, an error occurred while processing your request.';
-      },
-    });
-
-    const streamContext = getStreamContext();
-
-    if (streamContext) {
-      return new Response(
-        await streamContext.resumableStream(streamId, () => stream),
-      );
-    } else {
-      return new Response(stream);
+          return 'Oops, an error occurred!';
+        },
+      });
+  
+      const streamContext = getStreamContext();
+  
+      if (streamContext) {
         return new Response(
           await streamContext.resumableStream(streamId, () => stream),
         );

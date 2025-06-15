@@ -1,5 +1,6 @@
 import { CoreAssistantMessage, CoreToolMessage } from "ai";
 import { clsx, type ClassValue } from "clsx"
+import path from "path";
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -53,4 +54,8 @@ export function getTrailingMessageId({
 
 export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');
+}
+
+export function fromPackageRoot(relative: string) {
+  return path.resolve(__dirname, `../`, relative);
 }

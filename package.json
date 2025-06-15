@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^1.2.19",
     "@ai-sdk/react": "^1.2.12",
     "@ai-sdk/xai": "^1.2.16",
     "@headlessui/react": "^2.2.4",
