@@ -11,6 +11,8 @@ import clsx from "clsx"
 import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Link as ScrollLink } from 'react-scroll';
+import { GradientWheel } from "../ui/gradient-wheel"
+
 
 export default function StickyNav() {
   const [isOpen, setIsOpen] = useState(false)
@@ -29,11 +31,7 @@ export default function StickyNav() {
           <div className="flex items-center gap-3">
             {/* AI Wheel Icon with Gradient */}
             <button onClick={() => setIsOpen(!isOpen)} className="relative cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 via-teal-500 to-orange-400 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-300 to-orange-300 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-              </div>
+              <GradientWheel />
             </button>
 
             <span className="font-medium whitespace-nowrap">Ask My Assistant</span>
@@ -59,7 +57,7 @@ export default function StickyNav() {
             Ask me anything you want to know about my work and projects.
           </DialogDescription>
         </VisuallyHidden>
-        <DialogContent className={clsx("md:-ml-2 sm:max-w-3xl max-w-full h-[calc(100vh-300px)] bg-orange-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-300 rounded-3xl", !isScrolled ? "top-[425px]" : "top-[390px]")}>
+        <DialogContent className={clsx("border-2 border-teal-500/5 md:-ml-2 sm:max-w-3xl max-w-full h-[calc(100vh-300px)] bg-orange-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-300 rounded-3xl", !isScrolled ? "top-[calc(100vh-420px)]" : "top-[calc(100vh-455px)]")}>
           <Chat
             key={id}
             id={id}

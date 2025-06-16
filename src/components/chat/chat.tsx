@@ -80,7 +80,7 @@ export function Chat({
 
   return (
     <div className='relative'>
-      <div className="flex flex-col">
+      <div className="flex flex-col h-full">
         <Messages
           chatId={id}
           status={status}
