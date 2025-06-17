@@ -87,7 +87,7 @@ export function Chat({
           messages={messages}
         />
 
-        <form className="flex mx-auto bg-transparent gap-2 w-full self-end">
+        <form className="flex mx-auto bg-transparent gap-2 fixed bottom-4 left-4 right-4">
           <MultimodalInput
               chatId={id}
               input={input}

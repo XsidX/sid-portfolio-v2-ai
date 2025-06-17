@@ -57,7 +57,7 @@ export default function StickyNav() {
             Ask me anything you want to know about my work and projects.
           </DialogDescription>
         </VisuallyHidden>
-        <DialogContent className={clsx("border-2 border-teal-500/5 max-sm:px-0 md:-ml-2 sm:max-w-3xl max-w-full h-[calc(100vh-168px)] sm:h-[calc(100vh-300px)] bg-orange-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-300 rounded-3xl", !isScrolled ? "top-[calc(100vh-355px)] sm:top-[calc(100vh-420px)] " : "top-[calc(100vh-500px)] sm:top-[calc(100vh-455px)]")}>
+        <DialogContent className={clsx("border-2 border-teal-500/5 max-sm:px-0 md:-ml-2 sm:max-w-3xl max-w-full h-[calc(100vh-168px)] sm:h-[calc(100vh-300px)] bg-orange-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-300 rounded-3xl overflow-y-hidden", !isScrolled ? "top-[calc(100vh-355px)] sm:top-[calc(100vh-420px)] " : "top-[calc(100vh-500px)] sm:top-[calc(100vh-455px)]")}>
           <Chat
             key={id}
             id={id}
