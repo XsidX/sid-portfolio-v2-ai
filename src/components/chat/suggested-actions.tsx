@@ -11,7 +11,7 @@ interface SuggestedActionsProps {
   append: UseChatHelpers["append"]
 }
 
-function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
+function PureSuggestedActions({ append }: SuggestedActionsProps) {
   const suggestedActions = [
     {
       title: "Who is Sid",
@@ -83,7 +83,6 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
               <Button
                 variant="ghost"
                 onClick={async () => {
-                  // window.history.replaceState({}, "", `/chat/${chatId}`)
                   append({
                     role: "user",
                     content: suggestedAction.action,
