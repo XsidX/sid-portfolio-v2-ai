@@ -1,5 +1,5 @@
 // test-sid.ts
-import { getTopicNames, readAboutSid } from './sid';
+import { getTopicNames, readAboutSid } from './sid-google-files';
 
 async function testReadAboutSid() {
     try {

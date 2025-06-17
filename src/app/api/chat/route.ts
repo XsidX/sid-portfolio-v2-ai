@@ -4,7 +4,7 @@ import { myProvider } from "@/lib/ai/providers"
 import { postRequestBodySchema, type PostRequestBody } from "./schema"
 import { createResumableStreamContext, type ResumableStreamContext } from "resumable-stream"
 import { after } from "next/server"
-import { getTopicNamesTool, readAboutSidTool } from "@/lib/ai/tools/sid"
+import { getTopicNamesTool, readAboutSidTool } from "@/lib/ai/tools/sid-google-files"
 
 export const maxDuration = 60
 
