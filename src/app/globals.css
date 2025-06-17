@@ -119,4 +119,8 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .no-scrollbar {
+    @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+}
 }

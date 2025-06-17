@@ -63,7 +63,7 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
         <p className="text-sm text-muted-foreground">Choose a topic to learn more about Sid</p>
       </motion.div>
 
-      <div data-testid="suggested-actions" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div data-testid="suggested-actions" className="flex max-sm:w-[calc(100vw-20px)] max-sm:overflow-x-scroll no-scrollbar sm:grid grid-cols-2 lg:grid-cols-4 gap-3">
         {suggestedActions.map((suggestedAction, index) => {
           const IconComponent = suggestedAction.icon
 
@@ -94,16 +94,16 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
                   bg-gradient-to-br ${suggestedAction.gradient}
                   hover:bg-gradient-to-br hover:${suggestedAction.hoverGradient}
                   border border-border/50 hover:border-border
-                  rounded-2xl transition-all duration-300 ease-out
+                  rounded-md sm:rounded-2xl transition-all duration-300 ease-out
                   hover:shadow-lg hover:shadow-black/5
                   hover:-translate-y-1 hover:scale-[1.02]
                   active:scale-[0.98] active:translate-y-0
                 `}
               >
-                <div className="flex flex-col items-start p-4 w-full space-y-3">
+                <div className="flex flex-col items-start py-1 px-4 sm:p-4 w-full space-y-3">
                   <div
                     className={`
-                    p-2 rounded-xl bg-orange-50/90 dark:bg-zinc-900/20 backdrop-blur-sm
+                    hidden sm:block p-2 rounded-xl bg-orange-50/90 dark:bg-zinc-900/20 backdrop-blur-sm
                     group-hover:bg-background/80 transition-colors duration-300
                   `}
                   >
@@ -116,7 +116,7 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
                     <h4 className="font-semibold text-sm text-foreground group-hover:text-foreground/90 transition-colors">
                       {suggestedAction.title}
                     </h4>
-                    <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors leading-relaxed">
+                    <p className="hidden sm:block text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors leading-relaxed">
                       {suggestedAction.label}
                     </p>
                   </div>
