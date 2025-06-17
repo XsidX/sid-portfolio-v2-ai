@@ -37,7 +37,7 @@ function PureMessages({
       className="flex flex-col min-w-0 gap-6 flex-1 pt-4 relative"
     >
       <ScrollArea className={clsx({
-        'h-[calc(100vh-440px)]': messages.length > 0,
+        'h-[calc(100vh-300px)] md:h-[calc(100vh-440px)]': messages.length > 0,
         'h-[calc(100vh-800px)]': messages.length === 0,
       })}>
         {/* {messages.length === 0 && <Greeting />} */}

@@ -63,7 +63,7 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
         <p className="text-sm text-muted-foreground">Choose a topic to learn more about Sid</p>
       </motion.div>
 
-      <div data-testid="suggested-actions" className="flex max-sm:w-[calc(100vw-20px)] max-sm:overflow-x-scroll no-scrollbar sm:grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div data-testid="suggested-actions" className="flex max-sm:w-[calc(100vw-16px)] max-sm:overflow-x-scroll no-scrollbar sm:grid grid-cols-2 lg:grid-cols-4 gap-3">
         {suggestedActions.map((suggestedAction, index) => {
           const IconComponent = suggestedAction.icon
 

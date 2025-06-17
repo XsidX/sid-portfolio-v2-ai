@@ -221,7 +221,7 @@ function PureMultimodalInput({
         value={input}
         onChange={handleInput}
         className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 border-2 border-white dark:border-zinc-700 shadow-lg',
+          'min-h-[24px] max-h-[calc(75dvh)] max-sm:w-[calc(100vw-40px)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 border-2 border-white dark:border-zinc-700 shadow-lg',
           className,
         )}
         rows={2}
@@ -243,7 +243,7 @@ function PureMultimodalInput({
         }}
       />
 
-      <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
+      <div className="absolute bottom-0 right-6 sm:right-0 p-2 w-fit flex flex-row justify-end">
         {status === 'submitted' ? (
           <StopButton stop={stop} setMessages={setMessages} />
         ) : (
