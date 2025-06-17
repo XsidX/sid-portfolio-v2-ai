@@ -1,26 +1,25 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { google } from 'googleapis';
+import { google, drive_v3 } from 'googleapis';
+import { GoogleAuth } from 'google-auth-library';
 
 // Initialize Google Drive client and knowledge base folder ID
-let driveClient: google.drive_v3.Drive | null = null;
+let driveClient: drive_v3.Drive | null = null;
 let knowledgeBaseFolderId: string | null = null;
 
 async function initializeGoogleDrive() {
     if (driveClient && knowledgeBaseFolderId) {
-        return; // Already initialized
+        return;
     }
 
-    let auth: google.auth.GoogleAuth | undefined;
+    let auth: GoogleAuth | undefined;
 
-    // Using base64 encoded GOOGLE_APPLICATION_CREDENTIALS
     if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
         try {
             const credential = JSON.parse(
                 Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, "base64").toString()
             );
 
-            // Important: 'credentials' property directly takes client_email and private_key
             auth = new google.auth.GoogleAuth({
                 credentials: {
                     client_email: credential.client_email,
@@ -34,14 +33,12 @@ async function initializeGoogleDrive() {
             throw new Error('Invalid GOOGLE_APPLICATION_CREDENTIALS format. Ensure it is a valid base64 encoded JSON string.');
         }
     } else {
-        // No authentication method found
         throw new Error('Neither GOOGLE_APPLICATION_CREDENTIALS nor GOOGLE_APPLICATION_CREDENTIALS environment variable is set. Please configure Google Drive authentication.');
     }
 
     // Initialize the Drive client with the chosen authentication method
     driveClient = google.drive({ version: 'v3', auth });
 
-    // --- Knowledge Base Folder ID Logic (remains the same) ---
     if (process.env.GOOGLE_DRIVE_KNOWLEDGE_BASE_FOLDER_ID) {
         knowledgeBaseFolderId = process.env.GOOGLE_DRIVE_KNOWLEDGE_BASE_FOLDER_ID;
     } else {
@@ -132,8 +129,8 @@ export const getTopicNames = async (): Promise<string[]> => {
 
         const files = res.data.files || [];
         return files
-            .filter((f: { name: string | undefined }) => f.name !== undefined)
-            .map((f: { name: string }) => f.name);
+            .filter((f) => f.name !== null && f.name !== undefined)
+            .map((f) => f.name as string);
     } catch (error) {
         console.error('Failed to get topic names from Google Drive (Google Docs):', error);
         throw new Error(`Failed to get topic names from Google Drive (Google Docs): ${error instanceof Error ? error.message : String(error)}`);
